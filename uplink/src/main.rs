@@ -121,7 +121,7 @@ const DEFAULT_CONFIG: &'static str = r#"
     max_file_count = 3
     
     [streams.metrics]
-    topic = "/tenants/{tenant_id}/devices/{device_id}/events/metrics/jsonarray"
+    topic = "/tenants/{tenant_id}/devices/{device_id}/events/uplink_serializer_stats/jsonarray"
     buf_size = 10
     
     # Action status stream from status messages from bridge
