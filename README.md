@@ -14,6 +14,15 @@ Uplink is a rust based utility for efficiently sending data and receiving comman
 - Provides remote shell access through [Tunshell][tunshell]
 - Supports TLS with easy cross-compilation.
 
+## Install Uplink
+
+The easiest way to install uplink on officially supported target devices is to use the following command:
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://bytebeamio.github.io/uplink/install.sh | sh
+```
+
+> NOTE: It may be the case that you are on an officially yet to be supported target device, in which case you may use one of the multiple options described below.
+
 ### Build and Install
 
 Build and install with [Cargo][crates.io]:
