@@ -12,20 +12,29 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: uplink
+            cross-target: None
             asset_name: uplink-linux-amd64
           - os: macos-latest
-            artifact_name: uplink
+            cross-target: None
             asset_name: uplink-macos-amd64
+          - os: ubuntu-latest
+            cross-target: armv7-unknown-linux-gnueabihf
+            asset_name: uplink-linux-armv7
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Build project
+      - name: Build binary
+        if: ${{ matrix.cross-target == 'None' }}
         run: cargo build --release --locked
+      - name: Build binary
+        if: ${{ matrix.cross-target != 'None' }}
+        uses: docker://devduttshenoi/cross
+        with:
+          args: cross build --release --target ${{ matrix.cross-target }} --locked
       - name: Upload binary to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
+          file: target/release/uplink
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
