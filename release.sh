@@ -12,7 +12,7 @@ fi
 for TARGET in ${TARGETS}
 do
     echo "Building uplink for ${TARGET}"
-    cross build --release --target ${TARGET}
+    cross build --release --target ${TARGET} -vv
 done
 
 echo "Creating directory to store built executables: ${BUILD_DIR}"
