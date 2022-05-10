@@ -1,6 +1,7 @@
 #!/bin/sh
 TARGETS=$@
 BUILD_DIR="build/"
+RUST_BACKTRACE=1
 
 if test -e /var/run/docker.sock; then
     echo "Docker daemon volume is attached!"
@@ -12,7 +13,7 @@ fi
 for TARGET in ${TARGETS}
 do
     echo "Building uplink for ${TARGET}"
-    cross build --release --target ${TARGET} -vv
+    cross build --release --target ${TARGET}
 done
 
 echo "Creating directory to store built executables: ${BUILD_DIR}"
