@@ -1,32 +1,31 @@
-name: Releaser
+name: Build and upload binaries to release
 
 on:
   release:
     types: [created]
 
 jobs:
-  create-release:
-    name: Build and release for uplink binaries
-    runs-on: ubuntu-latest
-    container:
-      image: 'devduttshenoi/cross'
-      options: -v /var/run/docker.sock:/var/run/docker.sock
+  release:
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: uplink
+            asset_name: uplink-linux-amd64
+          - os: macos-latest
+            artifact_name: uplink
+            asset_name: uplink-macos-amd64
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v2
-    - name: Build binaries
-      run: ./release.sh x86_64-unknown-linux-gnu armv7-unknown-linux-gnueabihf
-    - name: Upload x86_64 binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: build/uplink-x86_64-unknown-linux-gnu
-        asset_name: uplink-x86_64-unknown-linux-gnu
-        tag: ${{ github.ref }}
-    - name: Upload arm binary to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: build/uplink-armv7-unknown-linux-gnueabihf
-        asset_name: uplink-armv7-unknown-linux-gnueabihf
-        tag: ${{ github.ref }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build project
+        run: cargo build --release --locked
+      - name: Upload binary to release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          tag: ${{ github.ref }}
