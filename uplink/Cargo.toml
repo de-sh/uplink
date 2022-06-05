@@ -12,6 +12,7 @@ simplelog = "0.11"
 disk = { path = "../disk" }
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec"] }
+futures-delay-queue = "0.5"
 tokio-stream = "0.1"
 tokio-compat-02 = "0.2.0"
 flume = "0.10"

@@ -1,4 +1,5 @@
 use flume::{Receiver, RecvError, Sender};
+use futures_delay_queue::delay_queue;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -34,6 +35,8 @@ pub enum Error {
     Actions(#[from] ActionsError),
     #[error("Couldn't fill stream")]
     Stream(#[from] crate::base::Error),
+    #[error("Delay expired: {0}")]
+    DelayExpired(#[from] futures_delay_queue::ErrorAlreadyExpired),
 }
 
 pub struct Bridge {
@@ -109,8 +112,9 @@ impl Bridge {
         let action_timeout = time::sleep(Duration::from_secs(100));
         tokio::pin!(action_timeout);
 
-        let flush_timeout = time::sleep(flush_period);
-        tokio::pin!(flush_timeout);
+        // Create flush queue and flush_map to store flush state information of multiple streams
+        let (flush_queue, rx) = delay_queue::<String>();
+        let mut flush_map = HashMap::new();
 
         loop {
             select! {
@@ -151,8 +155,24 @@ impl Bridge {
                         }
                     };
 
-                    if let Err(e) = partition.fill(data).await {
-                        error!("Failed to send data. Error = {:?}", e.to_string());
+                    let data_stream = data.stream.clone();
+
+                    let flushed = match partition.fill(data).await {
+                        Ok(f) => f,
+                        Err(e) => {error!("Failed to send data. Error = {:?}", e.to_string()); continue}
+                    };
+
+                    // if not flushed and flush_map doesn't contain flush_handle, insert new flush_handle
+                    if !flushed && flush_map.get(&data_stream).is_none() {
+                        let flush_handle = flush_queue.insert(data_stream.clone(), flush_period);
+                        flush_map.insert(data_stream, flush_handle);
+                        continue
+                    }
+
+                    // Remove flush_handle from map and cancel it if flushed, else do nothing
+                    match flush_map.remove(&data_stream) {
+                        Some(f) if flushed => f.cancel().await?,
+                        _ => {}
                     }
                 }
 
@@ -184,14 +204,17 @@ impl Bridge {
                     }
                 }
 
-                // Ask partitions to flush themselves on interval timeout
-                _ = &mut flush_timeout => {
-                    info!("Manually flushing streams");
-                    for (_, partition) in bridge_partitions.iter_mut() {
-                        partition.flush().await?;
-                    }
-
-                    flush_timeout.as_mut().reset(Instant::now() + flush_period);
+                // Flush stream/partitions that timeout
+                Some(stream) = rx.receive() => {
+                    info!("Manually flushing stream: {}", stream);
+                    let stream = match bridge_partitions.get_mut(&stream) {
+                        Some(s) => s,
+                        _ => {
+                            error!("Failed to find stream. Stream = {}", stream);
+                            continue
+                        }
+                    };
+                    stream.flush().await?;
                 }
             }
         }
