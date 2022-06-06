@@ -1,5 +1,5 @@
 use flume::{Receiver, RecvError, Sender};
-use futures_delay_queue::delay_queue;
+use futures_delay_queue::{delay_queue, DelayHandle};
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -10,6 +10,7 @@ use tokio_stream::StreamExt;
 use tokio_util::codec::Framed;
 use tokio_util::codec::{LinesCodec, LinesCodecError};
 
+use std::collections::hash_map::Entry;
 use std::io;
 
 use crate::base::actions::{Action, ActionResponse, Error as ActionsError};
@@ -114,7 +115,7 @@ impl Bridge {
 
         // Create flush queue and flush_map to store flush state information of multiple streams
         let (flush_queue, rx) = delay_queue::<String>();
-        let mut flush_map = HashMap::new();
+        let mut flush_map = HashMap::<String, DelayHandle>::new();
 
         loop {
             select! {
@@ -159,19 +160,23 @@ impl Bridge {
 
                     let flushed = match partition.fill(data).await {
                         Ok(f) => f,
-                        Err(e) => {error!("Failed to send data. Error = {:?}", e.to_string()); continue}
+                        Err(e) => {
+                            error!("Failed to send data. Error = {:?}", e);
+                            continue
+                        }
                     };
 
-                    // if not flushed and flush_map doesn't contain flush_handle, insert new flush_handle
-                    if !flushed && flush_map.get(&data_stream).is_none() {
-                        let flush_handle = flush_queue.insert(data_stream.clone(), flush_period);
-                        flush_map.insert(data_stream, flush_handle);
-                        continue
-                    }
-
-                    // Remove flush_handle from map and cancel it if flushed, else do nothing
-                    match flush_map.remove(&data_stream) {
-                        Some(f) if flushed => f.cancel().await?,
+                    // Remove flush_handle from map and cancel it if flushed, if not flushed and flush_map
+                    // doesn't contain flush_handle insert new flush_handle, else do nothing.
+                    match flush_map.entry(data_stream.clone()) {
+                        Entry::Occupied(o) if flushed => {
+                            let flush_handle = o.remove();
+                            flush_handle.cancel().await?
+                        },
+                        Entry::Vacant(v) if !flushed => {
+                            let flush_handle = flush_queue.insert(data_stream, flush_period);
+                            v.insert(flush_handle);
+                        }
                         _ => {}
                     }
                 }
