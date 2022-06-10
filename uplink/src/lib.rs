@@ -25,7 +25,7 @@ pub use base::{Config, Stream};
 pub use base::{Package, Point};
 pub use collector::simulator::Simulator;
 use collector::systemstats::StatCollector;
-pub use collector::tcpjson::{Bridge, Payload};
+pub use collector::tcpjson::{Bridge, DelayMap, Payload};
 pub use disk::Storage;
 
 struct RxTx<T> {

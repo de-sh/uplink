@@ -10,13 +10,14 @@ use tokio::{select, time};
 use tokio_stream::StreamExt;
 use tokio_util::codec::{Framed, LinesCodec, LinesCodecError};
 
-use std::{collections::HashMap, io, sync::Arc};
+use std::{io, sync::Arc};
 
 use crate::base::actions::{Action, ActionResponse, Error as ActionsError};
 use crate::base::{Buffer, Config, Package, Point, Stream};
 
 mod util;
-use util::DelayMap;
+pub use util::DelayMap;
+use util::StreamHandler;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -38,10 +39,10 @@ pub enum Error {
 
 pub struct Bridge {
     config: Arc<Config>,
-    data_tx: Sender<Box<dyn Package>>,
     actions_rx: Receiver<Action>,
     current_action: Option<String>,
     action_status: Stream<ActionResponse>,
+    stream_handler: StreamHandler,
 }
 
 impl Bridge {
@@ -51,7 +52,8 @@ impl Bridge {
         actions_rx: Receiver<Action>,
         action_status: Stream<ActionResponse>,
     ) -> Bridge {
-        Bridge { config, data_tx, actions_rx, current_action: None, action_status }
+        let stream_handler = StreamHandler::new(config.clone(), data_tx);
+        Bridge { config, actions_rx, current_action: None, action_status, stream_handler }
     }
 
     pub async fn start(&mut self) -> Result<(), Error> {
@@ -95,21 +97,9 @@ impl Bridge {
         &mut self,
         mut framed: Framed<TcpStream, LinesCodec>,
     ) -> Result<(), Error> {
-        let flush_period = Duration::from_secs(self.config.flush_period.unwrap_or(10));
-
-        let mut bridge_partitions = HashMap::new();
-        for (stream, config) in self.config.streams.clone() {
-            bridge_partitions.insert(
-                stream.clone(),
-                Stream::new(stream, config.topic, config.buf_size, self.data_tx.clone()),
-            );
-        }
-
         let mut action_status = self.action_status.clone();
         let action_timeout = time::sleep(Duration::from_secs(100));
         tokio::pin!(action_timeout);
-
-        let mut flush_handler = DelayMap::new();
 
         loop {
             select! {
@@ -137,37 +127,7 @@ impl Bridge {
                         }
                     }
 
-                    let partition = match bridge_partitions.get_mut(&data.stream) {
-                        Some(partition) => partition,
-                        None => {
-                            if bridge_partitions.keys().len() > 20 {
-                                error!("Failed to create {:?} stream. More than max 20 streams", data.stream);
-                                continue
-                            }
-
-                            let stream = Stream::dynamic(&data.stream, &self.config.project_id, &self.config.device_id, self.data_tx.clone());
-                            bridge_partitions.entry(data.stream.clone()).or_insert(stream)
-                        }
-                    };
-
-                    let flushed = match partition.fill(data).await {
-                        Ok(f) => f,
-                        Err(e) => {
-                            error!("Failed to send data. Error = {:?}", e.to_string());
-                            continue
-                        }
-                    };
-
-                    if flushed {
-                        // Remove timeout from flush_handler for selected stream if flushed.
-                        flush_handler.remove(partition.name.as_ref());
-                    } else if flush_handler.contains(partition.name.as_ref()) {
-                        // Reset timeout from flush_handler for selected stream if not flushed.
-                        flush_handler.reset(partition.name.as_ref(), flush_period)
-                    } else {
-                        // Add new timeout to flush_handler if not flushed and it was not mapped.
-                        flush_handler.insert(partition.name.to_string(), flush_period);
-                    }
+                    self.stream_handler.handle_data(data).await;
                 }
 
                 action = self.actions_rx.recv_async() => {
@@ -198,12 +158,8 @@ impl Bridge {
                     }
                 }
 
-                // Flush stream/partitions that timeout
-                stream = flush_handler.next(), if !flush_handler.is_empty() => {
-                    let stream = stream.unwrap();
-                    bridge_partitions.get_mut(&stream).unwrap().flush().await?;
-                }
-
+                // Flush streams that timeout, return any errors
+                _ = self.stream_handler.next(), if !self.stream_handler.is_empty() => {}
             }
         }
     }
