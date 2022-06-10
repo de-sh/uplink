@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::{collections::HashMap, hash::Hash, sync::Arc, time::Duration};
 
 use flume::Sender;
-use log::error;
+use log::{error, warn};
 use tokio_stream::StreamExt;
 use tokio_util::time::{delay_queue::Key, DelayQueue};
 
@@ -33,15 +33,36 @@ impl<T: Eq + Hash + Clone> DelayMap<T> {
         }
     }
 
-    // Check if map contains key for stream timeout.
-    pub fn contains(&self, item: &T) -> bool {
-        self.map.contains_key(item)
-    }
-
     // Insert new timeout.
     pub fn insert(&mut self, item: T, period: Duration) {
         let key = self.queue.insert(item.clone(), period);
         self.map.insert(item, key);
+    }
+
+    /// Method to update the delay-map in following circumstances:
+    /// 1. Item's timeout is not in queue, insert new timeout on condition `!remove`.
+    /// 2. Item's timeout is in queue, remove timeout on condition `remove`.
+    /// 3. Item's timeout is in queue, reset timeout on condition `!remove`.
+    /// `return true` in all above cases, but `return false` on condition `remove` if `item`'s timeout is not in queue
+    pub fn update(&mut self, item: &T, period: Duration, remove: bool) -> bool {
+        match self.map.entry(item.to_owned()) {
+            Entry::Vacant(e) => {
+                if remove {
+                    return false;
+                } else {
+                    e.insert(self.queue.insert(item.to_owned(), period));
+                }
+            }
+            Entry::Occupied(e) => {
+                if remove {
+                    self.queue.remove(&e.remove());
+                } else {
+                    self.queue.reset(&e.get(), period)
+                }
+            }
+        }
+
+        true
     }
 
     // Remove a key from map if it has timedout.
@@ -118,23 +139,13 @@ impl StreamHandler {
             }
         };
 
-        // update stream's timeout if necessary
-        match self.flush_handler.map.entry(stream.name.to_string()) {
-            // Remove timeout from queue and map for selected stream if flushed.
-            Entry::Occupied(e) if flushed => {
-                let key = e.remove();
-                self.flush_handler.queue.remove(&key);
-            }
-            // Reset timeout from queue and map for selected stream if not flushed.
-            Entry::Occupied(e) => {
-                let key = e.get();
-                self.flush_handler.queue.reset(key, self.period);
-            }
-            // Add new timeout to queue if not flushed and not in map.
-            Entry::Vacant(e) => {
-                let key = self.flush_handler.queue.insert(stream.name.to_string(), self.period);
-                e.insert(key);
-            }
+        // Remove timeout from flush_handler for selected stream if flushed, else reset if it
+        // already exists or insert a new one. warn in case stream flushed was not in the queue.
+        if !self.flush_handler.update(stream.name.as_ref(), self.period, flushed) {
+            warn!(
+                "Flushed stream's timeout couldn't be removed from DelayMap: {}",
+                stream.name.as_ref()
+            )
         }
     }
 
