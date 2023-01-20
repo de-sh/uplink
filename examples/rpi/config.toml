@@ -1,0 +1,3 @@
+[downloader]
+actions = ["update_firmware"]
+path = "/mnt/download" # Where you want the update file to be downloaded
