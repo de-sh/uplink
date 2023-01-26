@@ -31,10 +31,10 @@ curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/systemd/bridge.service htt
 curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/config.toml https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/config.toml
 
 # get reboot.sh
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/config.toml https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/reboot.sh
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/reboot.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/reboot.sh
 
 # get find_root.sh
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/config.toml https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/find_root.sh
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/find_root.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/find_root.sh
 
 # Make uplink executable
 chmod +x /mnt/download/uplink
