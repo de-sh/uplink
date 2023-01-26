@@ -9,6 +9,16 @@ THREE_BOOT=/boot/three
 THREE_FAILED=/boot/three_failed
 THREE_DOWNLOAD=/mnt/download/three
 
+if [ -f $TWO_FAILED ]
+then
+   rm -rf $TWO_FAILED
+fi
+
+if [ -f $THREE_FAILED ]
+then
+   rm -rf $THREE_FAILED
+fi
+
 if [ -f "$THREE_DOWNLOAD" ]
 then
 	if [ ${root_part: -1} = "2" ]

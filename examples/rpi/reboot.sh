@@ -1,15 +1,4 @@
-<<com
-Once update_firmware is triggered,
-1. Find the next root, say three (from update_fstab.sh)
-
-2. Create a file, with the same name as next_root in /mnt/download folder
-	touch /mnt/download/three
-3. Reboot
-
-After reboot,
-1. Find the current root (from update_fstab.sh)
-2. Compare current root with 
-com 
+#!/bin/bash
 TWO_OK=/boot/two_ok
 TWO_BOOT=/boot/two
 TWO_DOWNLOAD=/mnt/download/two
@@ -48,6 +37,7 @@ then
 	if [ -f "$THREE_DOWNLOAD" ]
 	then
 		rm -rf $THREE_DOWNLOAD
+	fi
 	touch $TWO_DOWNLOAD
 	touch $TWO_BOOT
 fi
