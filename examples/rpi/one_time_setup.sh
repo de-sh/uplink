@@ -12,17 +12,17 @@ cp update_fstab.sh /mnt/download/
 curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/update_fstab_next_root.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/update_fstab_next_root.sh
 
 # get uplink binary
-curl --proto '=https' --tlsv1.2 -sSfL -o /mnt/download/uplink https://github.com/sai-kiran-y/uplink/releases/download/v1.6.1/uplink-aarch64-unknown-linux-gnu
+curl --proto '=https' --tlsv1.2 -sSfL -o /mnt/download/uplink https://github.com/bytebeamio/uplink/releases/download/v1.6.1/uplink-aarch64-unknown-linux-gnu
 
 # get bridge_app
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/bridge.py https://raw.githubusercontent.com//sai-kiran-y/uplink/main/examples/rpi/bridge.py
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/bridge.py https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/bridge.py
 
 # get systemd script
 mkdir -pv /mnt/download/systemd
 curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/systemd/systemd.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/systemd/systemd.sh
 
 # get uplink.service
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/systemd/uplink.service https://raw.githubusercontent.com/bytebeamio/sai-kiran-y/main/examples/rpi/systemd/uplink.service
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/systemd/uplink.service https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/systemd/uplink.service
 
 # get bridge.service
 curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/systemd/bridge.service https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/systemd/bridge.service
