@@ -33,18 +33,20 @@ curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/config.toml https://raw.gi
 # get reboot.sh
 curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/reboot.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/reboot.sh
 
+# get run_uplink.sh script
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/run_uplink.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/run_uplink.sh
+
 # get find_root.sh
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/find_root.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/find_root.sh
+curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/find_root.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/startup.sh
 
 # Make uplink executable
 chmod +x /mnt/download/uplink
 
 cp /mnt/download/systemd/uplink.service /etc/systemd/system/
 cp /mnt/download/systemd/bridge.service /etc/systemd/system/
+cp /mnt/download/systemd/startup.service /etc/systemd/system/
 systemctl daemon-reload
 
-# get run_uplink.sh script
-curl --proto '=https' --tlsv1.2 -sSf -o /mnt/download/run_uplink.sh https://raw.githubusercontent.com/sai-kiran-y/uplink/main/examples/rpi/run_uplink.sh
 
 chmod +x /mnt/download/run_uplink.sh
 
