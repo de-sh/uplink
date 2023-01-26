@@ -101,6 +101,15 @@ def update_firmware(action_id, payload_json):
         else:
             print("Path %s does not exist"%"/mnt/download/systemd/systemd.sh")
             return action_failed(action_id, "Could not find the script, systemd.sh")
+
+        # run /mnt/download/reboot.sh
+        if os.path.exists("/mnt/download/reboot.sh"):
+            os.chmod("/mnt/download/reboot.sh", 0o755)
+            print("Running script")
+            subprocess.run("/mnt/download/reboot.sh", cwd="/mnt/download/")
+        else:
+            print("Path %s does not exist"%"/mnt/download/reboot.sh")
+            return action_failed(action_id, "Could not find the script, reboot.sh")
     return action_complete(action_id)
 
 def recv_actions():
