@@ -1,0 +1,13 @@
+[Unit]
+Description=Bytebeam One Time Setup Service
+After=network.target auditd.service
+
+[Service]
+ExecStart=/tmp/one_time_setup.sh 
+
+KillMode=process
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
