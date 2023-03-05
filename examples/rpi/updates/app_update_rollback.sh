@@ -6,16 +6,25 @@
 ##			2. Replace the application binary in both A, B partitions
 ## 		3. Restart the application service
 ##			4. Check if service is running as expected.
-##			5. Send the status(success/failure) to uplink
+##			5. Restore prev. app version, if service is inactive
+##			6. Send the status(success/failure) to uplink
 
 FILE_PATH=.
 APP=$1
-APP_BIN_PATH=/usr/local/bin
+if [ "$APP" = "uplink" ]
+then
+	APP_BIN_PATH=/mnt/download
+else
+	APP_BIN_PATH=/usr/local/bin
+fi
+
 if [ -f /etc/systemd/system/$APP.service ]
 then
 	# Stop the service
 	systemctl stop $APP
 
+	# Rename the application(needed for rollback)
+	mv $APP_BIN_PATH/$APP $APP_BIN_PATH/$APP.old
 	cp $FILE_PATH/$APP $APP_BIN_PATH/
 
 	# Restart the service
@@ -26,14 +35,23 @@ then
 	if [ "$(systemctl is-active --quiet $APP.service)" = "active" ]
 	then
 		echo "is active"
-		# Send status(success) to uplink
+		# Send status(success) to uplink)
 		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
 
 		# Update the other partition also
-		cp $FILE_PATH/$APP /mnt/next_root/$APP_BIN_PATH/
+		if [ "$APP" != "uplink" ]
+		then
+			cp $FILE_PATH/$APP /mnt/next_root/$APP_BIN_PATH/
+		fi
 	else
 		echo "inactive"
-		# Send status(failed) to uplink
+		
+		## Rollback feature
+		rm $APP_BIN_PATH/$APP
+		mv $APP_BIN_PATH/$APP.old $APP_BIN_PATH/$APP
+		systemctl start $APP
+
+		# Send status(failed) to uplink)
 		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
 	fi
 else

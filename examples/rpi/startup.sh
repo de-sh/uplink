@@ -1,5 +1,6 @@
 root_part=`awk -F"root=" '{ print $NF; }' /proc/cmdline | cut -d" " -f1`
 
+action_id=`cat /mnt/download/action_id`
 TWO_OK=/boot/two_ok
 TWO_BOOT=/boot/two
 TWO_FAILED=/boot/two_failed
@@ -32,12 +33,22 @@ then
 		then
 			rm -rf $THREE_DOWNLOAD
 		fi
+
 		# Notify uplink
+		if [ "$action_id" != 0 ]
+		then
+			echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $action_id, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
+			echo 0 > /mnt/download/action_id
+		fi
 	elif [ ${root_part: -1} = "3" ]
 	then
 		# Boot successful
 		rm -rf $THREE_FAILED
 		touch $THREE_OK
+		if [ "$action_id" != 0 ]
+		then
+			echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $action_id, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
+		fi
 	fi
 elif [ -f "$TWO_DOWNLOAD" ]
 then
@@ -52,10 +63,20 @@ then
 		then
 			rm -rf $TWO_DOWNLOAD
 		fi
+
 		# Notify uplink
+		if [ "$action_id" != 0 ]
+		then
+			echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $action_id, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
+		fi
 	elif [ ${root_part: -1} = "2" ]
 	then
 		# Boot successful
+		if [ "$action_id" != 0 ]
+		then
+			echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $action_id, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
+			echo 0 > /mnt/download/action_id
+		fi
 		rm -rf $TWO_FAILED
 		touch $TWO_OK
 	fi
