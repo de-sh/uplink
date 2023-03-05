@@ -1,5 +1,11 @@
 #!/bin/bash
 ## This script extracts the rootfs to the new partition
+## Steps:
+#			1. Extract the rootfs to new partition
+#			2. Update the fstab
+#			3. Copy WiFi config. files to new rootfs
+#			4. Add uplink and startup scripts to systemd
+#			5. Reboot the system
 
 action_id=$2
 echo $action_id > /mnt/download/action_id
@@ -7,9 +13,9 @@ echo $action_id > /mnt/download/action_id
 ## Step 1: Extracting the rootfs
 rm -rf /mnt/next_root/*
 tar -xvpzf backup.tar.gz -C /mnt/next_root/
-echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 25, \"errors\": [] }"
+echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 20, \"errors\": [] }"
 
-## Update the fstab of extracted rootfs
+## Step 2: Update the fstab of extracted rootfs
 # Get the root partition info
 root_part=`awk -F"root=" '{ print $NF; }' /proc/cmdline | cut -d" " -f1`
 
@@ -46,12 +52,13 @@ mkdir -pv /mnt/next_root
 echo "PARTUUID=$root_uuid	/mnt/next_root	ext4	defaults,noatime	0	2" >> /mnt/next_root/etc/fstab
 mkdir -pv /mnt/download
 echo "PARTUUID=$download_uuid	/mnt/download	ext4	defaults,noatime	0	2" >> /mnt/next_root/etc/fstab
+echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 40, \"errors\": [] }"
 
-## Step 2: Copying WiFi config. files to the next rootfs
+## Step 3: Copying WiFi config. files to the next rootfs
 cp /etc/wpa_supplicant/wpa_supplicant.conf /mnt/next_root/etc/wpa_supplicant/
 echo "{ \"sequence\": 1, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 50, \"errors\": [] }"
 
-## Step 3: Add uplink and other scripts to systemd
+## Step 4: Add uplink and other scripts to systemd
 # Add uplink to systemd
 cp /mnt/download/systemd/uplink.service /mnt/next_root/etc/systemd/system/
 if [ -f /mnt/next_root/etc/systemd/system/multi-user.target.wants/uplink.service ]
@@ -70,6 +77,9 @@ fi
 ln -s /mnt/next_root/etc/systemd/system/bridge.service /mnt/next_root/etc/systemd/system/multi-user.target.wants/bridge.service
 """
 # Add startup script to systemd
+# startup script checks if:
+#			system booted to correct partition 
+#			uplink is running as expected
 cp /mnt/download/systemd/startup.service /mnt/next_root/etc/systemd/system/
 if [ -f /mnt/next_root/etc/systemd/system/multi-user.target.wants/startup.service ]
 then
@@ -79,6 +89,8 @@ ln -s /mnt/next_root/etc/systemd/system/startup.service /mnt/next_root/etc/syste
 echo "{ \"sequence\": 2, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 75, \"errors\": [] }"
 
 ## Step 4: Reboot the system
+# Before rebooting, some flags are created in data partition
+# to know if reboot is due to rootfs issue or if it's a normal reboot.
 TWO_OK=/boot/two_ok
 TWO_BOOT=/boot/two
 TWO_DOWNLOAD=/mnt/download/two
@@ -123,4 +135,6 @@ then
 fi
 
 echo "{ \"sequence\": 3, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 90, \"errors\": [] }"
+
+# If the boot is successful, startup script sends progress as 100.
 sudo reboot
