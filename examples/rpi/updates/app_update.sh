@@ -4,7 +4,7 @@
 ## Things to do:
 ##			1. Stop the service related to the app
 ##			2. Replace the application binary in both A, B partitions
-## 		3. Restart the application service
+## 			3. Restart the application service
 ##			4. Check if service is running as expected.
 ##			5. Send the status(success/failure) to uplink
 
