@@ -7,13 +7,13 @@
 #			4. Add uplink and startup scripts to systemd
 #			5. Reboot the system
 
-action_id=$2
+action_id=$1
 echo $action_id > /mnt/download/action_id
 
 ## Step 1: Extracting the rootfs
 rm -rf /mnt/next_root/*
 tar -xvpzf backup.tar.gz -C /mnt/next_root/
-echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 20, \"errors\": [] }"
+echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 20, \"errors\": [] }"
 
 ## Step 2: Update the fstab of extracted rootfs
 # Get the root partition info
@@ -52,11 +52,11 @@ mkdir -pv /mnt/next_root
 echo "PARTUUID=$root_uuid	/mnt/next_root	ext4	defaults,noatime	0	2" >> /mnt/next_root/etc/fstab
 mkdir -pv /mnt/download
 echo "PARTUUID=$download_uuid	/mnt/download	ext4	defaults,noatime	0	2" >> /mnt/next_root/etc/fstab
-echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 40, \"errors\": [] }"
+echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 40, \"errors\": [] }"
 
 ## Step 3: Copying WiFi config. files to the next rootfs
 cp /etc/wpa_supplicant/wpa_supplicant.conf /mnt/next_root/etc/wpa_supplicant/
-echo "{ \"sequence\": 1, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 50, \"errors\": [] }"
+echo "{ \"sequence\": 1, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 50, \"errors\": [] }"
 
 ## Step 4: Add uplink and other scripts to systemd
 # Add uplink to systemd
@@ -86,7 +86,7 @@ then
 	unlink  /mnt/next_root/etc/systemd/system/multi-user.target.wants/startup.service 
 fi
 ln -s /mnt/next_root/etc/systemd/system/startup.service /mnt/next_root/etc/systemd/system/multi-user.target.wants/startup.service
-echo "{ \"sequence\": 2, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 75, \"errors\": [] }"
+echo "{ \"sequence\": 2, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 75, \"errors\": [] }"
 
 ## Step 4: Reboot the system
 # Before rebooting, some flags are created in data partition
@@ -134,7 +134,7 @@ then
 	touch $TWO_BOOT
 fi
 
-echo "{ \"sequence\": 3, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 90, \"errors\": [] }"
+echo "{ \"sequence\": 3, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 90, \"errors\": [] }"
 
 # If the boot is successful, startup script sends progress as 100.
 sudo reboot

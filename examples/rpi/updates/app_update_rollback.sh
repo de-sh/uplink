@@ -9,13 +9,13 @@
 ##			5. Restore prev. app version, if service is inactive
 ##			6. Send the status(success/failure) to uplink
 
-FILE_PATH=.
-APP=$1
+APP=$2
+FILE_PATH=$4
 if [ "$APP" = "uplink" ]
 then
 	APP_BIN_PATH=/mnt/download
 else
-	APP_BIN_PATH=/usr/local/bin
+	APP_BIN_PATH=$3
 fi
 
 if [ -f /etc/systemd/system/$APP.service ]
@@ -36,7 +36,7 @@ then
 	then
 		echo "is active"
 		# Send status(success) to uplink)
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
 
 		# Update the other partition also
 		if [ "$APP" != "uplink" ]
@@ -52,7 +52,7 @@ then
 		systemctl start $APP
 
 		# Send status(failed) to uplink)
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
 	fi
 else
 	echo "$APP.service does not exist"

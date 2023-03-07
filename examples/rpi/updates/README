@@ -1,9 +1,4 @@
 #!/bin/bash
 # Usage of update scripts
-./app_update.sh my_app 5421
-# my_app is the app name and 5421 is the action_id
-
-./deb_update.sh deb 5422
-./app_update_rollback.sh my_app 5423
-./app_update_rollback.sh uplink 5424 (This updates uplink binary)
-./rootfs_update.sh rootfs 5425
+# In update.sh, uncomment the appropriate update type
+./update.sh 5421

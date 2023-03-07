@@ -8,9 +8,9 @@
 ##			4. Check if service is running as expected.
 ##			5. Send the status(success/failure) to uplink
 
-FILE_PATH=.
-APP=$1
-APP_BIN_PATH=/usr/local/bin
+APP=$2
+APP_BIN_PATH=$3
+FILE_PATH=$4
 if [ -f /etc/systemd/system/$APP.service ]
 then
 	# Stop the service
@@ -27,14 +27,14 @@ then
 	then
 		echo "is active"
 		# Send status(success) to uplink
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
 
 		# Update the other partition also
 		cp $FILE_PATH/$APP /mnt/next_root/$APP_BIN_PATH/
 	else
 		echo "inactive"
 		# Send status(failed) to uplink
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $2, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
 	fi
 else
 	echo "$APP.service does not exist"
