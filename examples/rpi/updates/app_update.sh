@@ -8,9 +8,16 @@
 ##			4. Check if service is running as expected.
 ##			5. Send the status(success/failure) to uplink
 
+# COPROC[1] is the stdin for netcat
+# COPROC[0] is the stdout of netcat
+# By echoing to the stdin of nc, we write to the port 5555
+
 APP=$2
 APP_BIN_PATH=$3
 FILE_PATH=$4
+
+coproc nc localhost 5555
+
 if [ -f /etc/systemd/system/$APP.service ]
 then
 	# Stop the service
@@ -27,14 +34,14 @@ then
 	then
 		echo "is active"
 		# Send status(success) to uplink
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }" >& "${COPROC[1]}"
 
 		# Update the other partition also
 		cp $FILE_PATH/$APP /mnt/next_root/$APP_BIN_PATH/
 	else
 		echo "inactive"
 		# Send status(failed) to uplink
-		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }"
+		echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Failed\", \"progress\": 100, \"errors\": [] }" >& "${COPROC[1]}"
 	fi
 else
 	echo "$APP.service does not exist"
