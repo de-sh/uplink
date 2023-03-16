@@ -11,7 +11,8 @@
 # COPROC[0] is the stdout of netcat
 # By echoing to the stdin of nc, we write to the port 5555
 
-coproc nc localhost 5555
+PORT=$2
+coproc nc localhost $PORT 
 
 action_id=$1
 echo $action_id > /mnt/download/action_id

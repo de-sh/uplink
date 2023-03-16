@@ -13,15 +13,16 @@
 # COPROC[0] is the stdout of netcat
 # By echoing to the stdin of nc, we write to the port 5555
 
-coproc nc localhost 5555
+PORT=$2
+APP=$3
+FILE_PATH=$5
+coproc nc localhost $PORT 
 
-APP=$2
-FILE_PATH=$4
 if [ "$APP" = "uplink" ]
 then
 	APP_BIN_PATH=/mnt/download
 else
-	APP_BIN_PATH=$3
+	APP_BIN_PATH=$4
 fi
 
 if [ -f /etc/systemd/system/$APP.service ]

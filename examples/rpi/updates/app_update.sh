@@ -12,11 +12,12 @@
 # COPROC[0] is the stdout of netcat
 # By echoing to the stdin of nc, we write to the port 5555
 
-APP=$2
-APP_BIN_PATH=$3
-FILE_PATH=$4
+PORT=$2
+APP=$3
+APP_BIN_PATH=$4
+FILE_PATH=$5
 
-coproc nc localhost 5555
+coproc nc localhost $PORT
 
 if [ -f /etc/systemd/system/$APP.service ]
 then
