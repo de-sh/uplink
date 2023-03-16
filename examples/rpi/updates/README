@@ -1,4 +1,6 @@
 #!/bin/bash
 # Usage of update scripts
 # In update.sh, uncomment the appropriate update type
-./update.sh 5421
+./update.sh 5421 5555
+# 5421 is action id
+# 5555 is the comm. port between uplink and scripts
