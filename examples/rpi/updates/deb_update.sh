@@ -10,4 +10,4 @@ echo "this is deb update"
 coproc nc localhost $2
 
 # Send success to uplink
-echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }" >&"${COPROC[1]}"
+echo "{ \"stream\": \"action_status\", \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": \"$1\", \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }" >&"${COPROC[1]}"
