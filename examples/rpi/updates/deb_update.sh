@@ -7,7 +7,7 @@
 echo "this is deb update" 
 #dpkg -i ./*.deb
 
-coproc nc localhost 5555
+coproc nc localhost $2
 
 # Send success to uplink
 echo "{ \"sequence\": 0, \"timestamp\": $(date +%s%3N), \"action_id\": $1, \"state\": \"Completed\", \"progress\": 100, \"errors\": [] }" >&"${COPROC[1]}"
